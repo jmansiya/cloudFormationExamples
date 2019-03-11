@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Template utilizado para la generación de un API Gateway conectado con un SNS Topic.
+Metadata:
+  Instances:
+    Description: "N/A"
+  Databases:
+    Description: "N/A"
+
+Parameters:
+  owner:
+    Type: String
+    Description: Propietario de la pila generada por el template.
+    Default: Jose Mansilla
+  apiGatewayStageName:
+    Type: String
+    Description: Nombre del Stage desplegado del API.
+    AllowedPattern: "^[a-z0-9]+$"
+    Default: dev
+
+Resources:
+  apiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Description: Recurso que representa el API REST.
+      Name: myAPIGateway
+
+  apiGatewayPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref apiGateway
+      ResourceId: !GetAtt apiGateway.RootResourceId
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+
+  apiGatewayGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref apiGateway
+      ResourceId: !GetAtt apiGateway.RootResourceId
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+
+  apiGatewayDepolyment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - apiGatewayGetMethod
+      - apiGatewayPostMethod
+    Properties:
+      Description: Desplegamos la API que hemos generado.
+      RestApiId: !Ref apiGateway
+      StageDescription:
+        CacheClusterEnabled: false
+      StageName: !Ref apiGatewayStageName
+
+
+Outputs:
+  APIGatewayInvokeURL:
+    Description: URL de invocación de nuestro API Gateway.
+    Value: !Sub "https://${apiGateway}.execute-api.${AWS::Region}.amazonaws.com/${apiGatewayStageName}"
+    Export:
+      Name: APIGatewayInvokeURL
